@@ -1,11 +1,5 @@
 import { LOGIN_ENDPOINT, TOKEN, USER_AGENT } from '../config';
-
-export interface LoginData {
-  name: string;
-  user_id: string;
-  access_token: string;
-  refresh_token: string;
-}
+import { Session } from '../helper/useSession';
 
 const getHeaders = (): Headers => {
   const headers = new Headers([
@@ -24,7 +18,7 @@ const getHeaders = (): Headers => {
 export const login = async (
   email: string | undefined,
   password: string | undefined
-): Promise<LoginData | undefined> => {
+): Promise<Session | undefined> => {
   if (!email || !password) {
     console.error(
       'You must fill email and password or access_token and user_id'
@@ -34,19 +28,8 @@ export const login = async (
 
   try {
     let response;
-    // eslint-disable-next-line no-constant-condition
-    if (false) {
-      response = await fetch(LOGIN_ENDPOINT, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify({
-          device_type: 'UNKNOWN',
-          email,
-          password
-        })
-      });
-      console.log('Fetch.tsx:50: response: ', response);
-    } else {
+    const returnFakeResponse = true;
+    if (returnFakeResponse) {
       await new Promise((resolve) => {
         setTimeout(() => {
           resolve(undefined);
@@ -128,6 +111,17 @@ export const login = async (
         })
       };
       console.warn('Fetch.tsx:127: : \n\n Fake Response!\n\n\n');
+    } else {
+      response = await fetch(LOGIN_ENDPOINT, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({
+          device_type: 'UNKNOWN',
+          email,
+          password
+        })
+      });
+      console.log('Fetch.tsx:50: response: ', response);
     }
 
     if (response.status !== 200) {
@@ -138,6 +132,7 @@ export const login = async (
 
     const json = await response.json();
     return {
+      email,
       name: json.startup_data.user.name,
       user_id: json.startup_data.user.user_id,
       access_token: json.access_token,
