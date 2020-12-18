@@ -1,22 +1,27 @@
-import { useEffect, useState } from 'react';
+import { LOGIN_ENDPOINT, TOKEN, USER_AGENT } from '../config';
 
-const USER_AGENTS: string[] = JSON.parse(
-  process.env.REACT_APP_USER_AGENTS || '[]'
-);
-const USERID = process.env.REACT_APP_USERID;
-const TOKEN = process.env.REACT_APP_TOKEN;
-const EMAIL = process.env.REACT_APP_EMAIL;
-const PASSWORD = process.env.REACT_APP_PASSWORD;
-const LOGIN_ENDPOINT = process.env.REACT_APP_LOGIN_ENDPOINT || '';
-
-interface LoginData {
+export interface LoginData {
   name: string;
   user_id: string;
   access_token: string;
   refresh_token: string;
 }
 
-const login = async (
+const getHeaders = (): Headers => {
+  const headers = new Headers([
+    ['User-Agent', USER_AGENT],
+    ['Content-Type', 'application/json'],
+    ['Accept', 'application/json'],
+    ['Accept-Language', 'de-DE']
+  ]);
+  if (TOKEN) {
+    console.log('Fetch.tsx:using TOKEN: ', TOKEN);
+    headers.set('authorization', `Bearer ${TOKEN}`);
+  }
+  return headers;
+};
+
+export const login = async (
   email: string | undefined,
   password: string | undefined
 ): Promise<LoginData | undefined> => {
@@ -28,35 +33,25 @@ const login = async (
   }
 
   try {
-    const useragent =
-      USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
-    const headers: any = new Headers([
-      ['User-Agent', useragent],
-      ['Content-Type', 'application/json'],
-      ['Accept', 'application/json'],
-      ['Accept-Language', 'de-DE']
-    ]);
-    if (TOKEN) {
-      console.log('Fetch.tsx:using TOKEN: ', TOKEN);
-      headers.set('authorization', `Bearer ${TOKEN}`);
-    }
-
-    const body = JSON.stringify({
-      device_type: 'UNKNOWN',
-      email,
-      password
-    });
-
     let response;
     // eslint-disable-next-line no-constant-condition
     if (false) {
       response = await fetch(LOGIN_ENDPOINT, {
         method: 'POST',
-        headers,
-        body
+        headers: getHeaders(),
+        body: JSON.stringify({
+          device_type: 'UNKNOWN',
+          email,
+          password
+        })
       });
       console.log('Fetch.tsx:50: response: ', response);
     } else {
+      await new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(undefined);
+        }, 5000);
+      });
       response = {
         status: 200,
         statusText: 'Fake',
@@ -142,7 +137,6 @@ const login = async (
     }
 
     const json = await response.json();
-    console.log('Fetch.tsx:60: json: ', json);
     return {
       name: json.startup_data.user.name,
       user_id: json.startup_data.user.user_id,
@@ -153,22 +147,4 @@ const login = async (
     console.error('Fetch.tsx:63: e: ', e);
   }
   return undefined;
-};
-
-export const Fetch = (): JSX.Element => {
-  const [loginData, setLoginData] = useState<LoginData | undefined>();
-  useEffect(() => {
-    const doit = async () => {
-      const credentials = await login(EMAIL, PASSWORD);
-      if (credentials) {
-        setLoginData(credentials);
-      }
-    };
-    doit();
-  }, []);
-  return (
-    <>
-      <h1>Login: {loginData?.name + ': ' + loginData?.user_id}</h1>
-    </>
-  );
 };

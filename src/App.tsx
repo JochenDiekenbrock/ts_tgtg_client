@@ -1,12 +1,13 @@
 import React from 'react';
-import { theme } from './global-styles';
+import { GlobalStyles, theme } from './global-styles';
 import { ThemeProvider } from 'styled-components';
-import { Fetch } from './Fetch';
+import { Main } from './main';
 
 function App(): JSX.Element {
   return (
     <ThemeProvider theme={theme}>
-      <Fetch />
+      <GlobalStyles />
+      <Main />
     </ThemeProvider>
   );
 }
