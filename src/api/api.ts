@@ -1,16 +1,19 @@
-import { LOGIN_ENDPOINT, TOKEN, USER_AGENT } from '../config';
-import { Session } from '../helper/useSession';
+import { LOGIN_ENDPOINT, REFRESH_ENDPOINT, USER_AGENT } from '../config';
+import { Session, Token } from '../helper/useSession';
 
-const getHeaders = (): Headers => {
+const fakeLogin = true;
+const fakeRefresh = true;
+
+const getHeaders = (access_token?: string): Headers => {
   const headers = new Headers([
-    ['User-Agent', USER_AGENT],
-    ['Content-Type', 'application/json'],
     ['Accept', 'application/json'],
-    ['Accept-Language', 'de-DE']
+    ['Accept-Language', 'de-DE'],
+    ['Content-Type', 'application/json'],
+    ['User-Agent', USER_AGENT]
   ]);
-  if (TOKEN) {
-    console.log('Fetch.tsx:using TOKEN: ', TOKEN);
-    headers.set('authorization', `Bearer ${TOKEN}`);
+  if (access_token) {
+    console.log('api.ts:13: using access_token: ', access_token);
+    headers.set('Authorization', `Bearer ${access_token}`);
   }
   return headers;
 };
@@ -28,89 +31,18 @@ export const login = async (
 
   try {
     let response;
-    const returnFakeResponse = true;
-    if (returnFakeResponse) {
+    if (fakeLogin) {
       await new Promise((resolve) => {
         setTimeout(() => {
           resolve(undefined);
-        }, 5000);
+        }, 3000);
       });
       response = {
         status: 200,
         statusText: 'Fake',
-        json: () => ({
-          access_token: 'bla',
-          refresh_token: 'blub',
-          startup_data: {
-            user: {
-              user_id: '123',
-              name: 'Jochen',
-              country_id: 'DE',
-              email: 'asdf@.de',
-              phone_country_code: '',
-              phone_number: '',
-              role: 'CONSUMER',
-              is_partner: false,
-              newsletter_opt_in: false,
-              push_notifications_opt_in: true
-            },
-            app_settings: {
-              countries: [
-                {
-                  country_iso_code: 'DE',
-                  terms_url: 'https://toogoodtogo.de/de/terms-and-conditions',
-                  privacy_url: 'https://toogoodtogo.de/de/privacy-policy'
-                }
-              ],
-              purchase_rating_start: '06:00:00',
-              purchase_rating_end: '23:00:00',
-              purchase_rating_delay: 5400
-            },
-            user_settings: {
-              country_iso_code: 'DE',
-              phone_country_code_suggestion: '49',
-              is_user_email_verified: true,
-              terms_url: 'https://toogoodtogo.de/de/terms-and-conditions',
-              privacy_url: 'https://toogoodtogo.de/de/privacy-policy',
-              contact_form_url: 'https://toogoodtogo.de/de/support/consumer',
-              blog_url: 'https://toogoodtogo.de/de/blog',
-              careers_url: 'https://toogoodtogo.org/en/careers',
-              education_url: 'https://toogoodtogo.de/de/movement/education',
-              instagram_url: 'https://www.instagram.com/toogoodtogo.de',
-              store_signup_url:
-                'https://toogoodtogo.de/de/business?webview=1&utm_medium=App&utm_source=App&utm_campaign=',
-              store_contact_url: 'https://toogoodtogo.de/de/support/business',
-              bound_sw: {
-                longitude: 123,
-                latitude: 123
-              },
-              bound_ne: {
-                longitude: 123,
-                latitude: 123
-              },
-              meals_saved: {
-                country_iso_code: 'DE',
-                share_url: 'https://share.toogoodtogo.com/mealssaved',
-                image_url:
-                  'https://store.toogoodtogo.com/web/resource/v2/sharing/mealsSaved',
-                meals_saved_last_month: 295369,
-                month: 11,
-                year: 2020
-              },
-              has_any_vouchers: false
-            },
-            orders: {
-              current_time: '2020-12-18T14:08:35.951052Z',
-              has_more: false,
-              orders: []
-            },
-            vouchers: {
-              vouchers: []
-            }
-          }
-        })
+        json: () => JSON.parse(process.env.REACT_APP_LOGIN_RESPONSE || '')
       };
-      console.warn('Fetch.tsx:127: : \n\n Fake Response!\n\n\n');
+      console.warn('login: \n\n Fake Response!\n\n\n');
     } else {
       response = await fetch(LOGIN_ENDPOINT, {
         method: 'POST',
@@ -121,7 +53,7 @@ export const login = async (
           password
         })
       });
-      console.log('Fetch.tsx:50: response: ', response);
+      console.log('login: response: ', response);
     }
 
     if (response.status !== 200) {
@@ -139,7 +71,48 @@ export const login = async (
       refresh_token: json.refresh_token
     };
   } catch (e) {
-    console.error('Fetch.tsx:63: e: ', e);
+    console.error('error in login: ', e);
+  }
+  return undefined;
+};
+
+export const refresh = async (
+  refresh_token: string
+): Promise<Token | undefined> => {
+  try {
+    let response;
+    if (fakeRefresh) {
+      await new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(undefined);
+        }, 3000);
+      });
+      response = response = {
+        status: 200,
+        statusText: 'Fake',
+        json: () => JSON.parse(process.env.REACT_APP_LOGIN_RESPONSE || '')
+      };
+      console.warn('refresh: \n\n Fake Response!\n\n\n');
+    } else {
+      response = await fetch(REFRESH_ENDPOINT, {
+        method: 'POST',
+        headers: getHeaders(undefined),
+        body: JSON.stringify({
+          refresh_token
+        })
+      });
+      console.log('refresh: response: ', response);
+    }
+
+    if (response.status !== 200) {
+      throw new Error(
+        `Refresh failed with status ${response.status} ${response.statusText}`
+      );
+    }
+
+    return await response.json();
+  } catch (e) {
+    console.error('error in refresh: ', e);
   }
   return undefined;
 };

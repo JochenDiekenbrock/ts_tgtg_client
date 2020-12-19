@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { EMAIL, PASSWORD } from './config';
-import { login } from './api/api';
+import { login, refresh } from './api/api';
 import { useSession } from './helper/useSession';
 
 export const Main = (): JSX.Element => {
   const [loginData, setLoginData] = useSession();
   const [loadFailed, setLoadFailed] = useState(false);
 
-  console.log('main.tsx:8: loginData: ', loginData);
+  console.log('main.tsx:10: loginData: ', loginData);
   useEffect(() => {
     const doLogin = async () => {
       const loginData = await login(EMAIL, PASSWORD);
@@ -18,8 +18,24 @@ export const Main = (): JSX.Element => {
         setLoadFailed(true);
       }
     };
+    const doRefresh = async (refresh_token: string) => {
+      const token = await refresh(refresh_token);
+      if (!token) {
+        return false;
+      }
 
-    if (!loginData) {
+      if (loginData) {
+        setLoginData({
+          ...loginData,
+          ...token
+        });
+      }
+      return true;
+    };
+
+    if (loginData) {
+      doRefresh(loginData.refresh_token);
+    } else {
       doLogin();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

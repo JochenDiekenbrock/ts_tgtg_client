@@ -1,12 +1,15 @@
 import { useLocalStorage } from './useLocalStorage';
 import { Dispatch } from 'react';
 
-export interface Session {
+export interface Token {
+  access_token: string;
+  refresh_token: string;
+}
+
+export interface Session extends Token {
   name: string;
   user_id: string;
   email: string;
-  access_token: string;
-  refresh_token: string;
 }
 
 export const useSession = (): [
