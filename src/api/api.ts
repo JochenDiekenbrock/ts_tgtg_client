@@ -18,6 +18,24 @@ const getHeaders = (access_token?: string): Headers => {
   return headers;
 };
 
+const post = async (url: string, body: any): Promise<any> => {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: typeof body === 'string' ? body : JSON.stringify(body)
+  });
+  console.log('response: ', response);
+
+  if (response.status < 200 || response.status >= 300) {
+    console.error(
+      `Post ${url} failed with status ${response.status} ${response.statusText}`
+    );
+    return;
+  }
+
+  return await response.json();
+};
+
 export const login = async (
   email: string | undefined,
   password: string | undefined
@@ -29,90 +47,47 @@ export const login = async (
     return;
   }
 
-  try {
-    let response;
-    if (fakeLogin) {
-      await new Promise((resolve) => {
-        setTimeout(() => {
-          resolve(undefined);
-        }, 3000);
-      });
-      response = {
-        status: 200,
-        statusText: 'Fake',
-        json: () => JSON.parse(process.env.REACT_APP_LOGIN_RESPONSE || '')
-      };
-      console.warn('login: \n\n Fake Response!\n\n\n');
-    } else {
-      response = await fetch(LOGIN_ENDPOINT, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify({
-          device_type: 'UNKNOWN',
-          email,
-          password
-        })
-      });
-      console.log('login: response: ', response);
-    }
-
-    if (response.status !== 200) {
-      throw new Error(
-        `Login failed with status ${response.status} ${response.statusText}`
-      );
-    }
-
-    const json = await response.json();
-    return {
-      email,
-      name: json.startup_data.user.name,
-      user_id: json.startup_data.user.user_id,
-      access_token: json.access_token,
-      refresh_token: json.refresh_token
-    };
-  } catch (e) {
-    console.error('error in login: ', e);
+  if (fakeLogin) {
+    console.warn('login: \n\n Fake Response!\n\n\n');
+    return JSON.parse(process.env.REACT_APP_LOGIN_RESPONSE || '');
   }
-  return undefined;
+
+  const response = await post(LOGIN_ENDPOINT, {
+    device_type: 'UNKNOWN',
+    email,
+    password
+  });
+
+  if (!response) {
+    return;
+  }
+
+  return {
+    access_token: response.access_token,
+    email,
+    name: response.startup_data.user.name,
+    refresh_token: response.refresh_token,
+    refresh_time: new Date(),
+    user_id: response.startup_data.user.user_id
+  };
 };
 
 export const refresh = async (
   refresh_token: string
 ): Promise<Token | undefined> => {
-  try {
-    let response;
-    if (fakeRefresh) {
-      await new Promise((resolve) => {
-        setTimeout(() => {
-          resolve(undefined);
-        }, 3000);
-      });
-      response = response = {
-        status: 200,
-        statusText: 'Fake',
-        json: () => JSON.parse(process.env.REACT_APP_LOGIN_RESPONSE || '')
-      };
-      console.warn('refresh: \n\n Fake Response!\n\n\n');
-    } else {
-      response = await fetch(REFRESH_ENDPOINT, {
-        method: 'POST',
-        headers: getHeaders(undefined),
-        body: JSON.stringify({
-          refresh_token
-        })
-      });
-      console.log('refresh: response: ', response);
-    }
-
-    if (response.status !== 200) {
-      throw new Error(
-        `Refresh failed with status ${response.status} ${response.statusText}`
-      );
-    }
-
-    return await response.json();
-  } catch (e) {
-    console.error('error in refresh: ', e);
+  let response;
+  if (fakeRefresh) {
+    response = JSON.parse(process.env.REACT_APP_LOGIN_RESPONSE || '');
+    console.warn('refresh: \n\n Fake Response!\n\n\n');
+  } else {
+    response = await post(REFRESH_ENDPOINT, {
+      refresh_token
+    });
   }
-  return undefined;
+
+  if (!response) {
+    return;
+  }
+
+  return { ...response, refresh_time: new Date() };
 };

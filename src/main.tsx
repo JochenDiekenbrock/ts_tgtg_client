@@ -7,12 +7,10 @@ export const Main = (): JSX.Element => {
   const [loginData, setLoginData] = useSession();
   const [loadFailed, setLoadFailed] = useState(false);
 
-  console.log('main.tsx:10: loginData: ', loginData);
   useEffect(() => {
     const doLogin = async () => {
       const loginData = await login(EMAIL, PASSWORD);
       if (loginData) {
-        console.log('main.tsx:15: loginData: ', loginData);
         setLoginData(loginData);
       } else {
         setLoadFailed(true);

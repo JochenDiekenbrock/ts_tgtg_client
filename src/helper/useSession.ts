@@ -4,6 +4,7 @@ import { Dispatch } from 'react';
 export interface Token {
   access_token: string;
   refresh_token: string;
+  refresh_time: Date;
 }
 
 export interface Session extends Token {
