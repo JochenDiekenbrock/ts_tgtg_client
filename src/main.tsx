@@ -1,17 +1,19 @@
-import { useEffect, useState } from 'react';
+import { FC, useContext, useEffect, useState } from 'react';
 import { EMAIL, PASSWORD } from './config';
 import { login, refresh } from './api/api';
-import { useSession } from './helper/useSession';
+import { ItemsContainer } from './items-container';
+import { SessionContext } from './session';
 
-export const Main = (): JSX.Element => {
-  const [loginData, setLoginData] = useSession();
+export const Main: FC = () => {
+  const { session, setSession } = useContext(SessionContext);
+  console.log('main.tsx:9: sessionData: ', session);
   const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
     const doLogin = async () => {
       const loginData = await login(EMAIL, PASSWORD);
-      if (loginData) {
-        setLoginData(loginData);
+      if (loginData && setSession) {
+        setSession(loginData);
       } else {
         setLoadFailed(true);
       }
@@ -22,29 +24,35 @@ export const Main = (): JSX.Element => {
         return false;
       }
 
-      if (loginData) {
-        setLoginData({
-          ...loginData,
+      if (session && setSession) {
+        setSession({
+          ...session,
           ...token
         });
       }
       return true;
     };
 
-    if (loginData) {
-      doRefresh(loginData.refresh_token);
+    if (session) {
+      doRefresh(session.refresh_token);
     } else {
       doLogin();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  let component = <h1>Loading...</h1>;
   if (loadFailed) {
-    component = <h1>Sorry, could not load data</h1>;
-  } else if (loginData) {
-    component = <h1>Hello {loginData?.name}</h1>;
+    return <h1>Sorry, could not load data</h1>;
   }
 
-  return component;
+  if (session) {
+    return (
+      <>
+        <h1>Hello {session.startup_data.user.name}</h1>
+        <ItemsContainer />
+      </>
+    );
+  }
+
+  return <h1>Loading...</h1>;
 };

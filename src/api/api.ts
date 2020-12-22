@@ -1,6 +1,12 @@
-import { LOGIN_ENDPOINT, REFRESH_ENDPOINT, USER_AGENT } from '../config';
-import { Session, Token } from '../helper/useSession';
+import {
+  ITEM_ENDPOINT,
+  LOGIN_ENDPOINT,
+  REFRESH_ENDPOINT,
+  USER_AGENT
+} from '../config';
+import { Item, ItemSearchCriteria, Session, Token } from '../helper/models';
 
+const fakeItem = true;
 const fakeLogin = true;
 const fakeRefresh = true;
 
@@ -18,10 +24,14 @@ const getHeaders = (access_token?: string): Headers => {
   return headers;
 };
 
-const post = async (url: string, body: any): Promise<any> => {
+const post = async (
+  url: string,
+  body: any,
+  access_token?: string
+): Promise<any> => {
   const response = await fetch(url, {
     method: 'POST',
-    headers: getHeaders(),
+    headers: getHeaders(access_token),
     body: typeof body === 'string' ? body : JSON.stringify(body)
   });
   console.log('response: ', response);
@@ -63,10 +73,9 @@ export const login = async (
   }
 
   return {
-    access_token: response.access_token,
+    ...response,
     email,
     name: response.startup_data.user.name,
-    refresh_token: response.refresh_token,
     refresh_time: new Date(),
     user_id: response.startup_data.user.user_id
   };
@@ -90,4 +99,28 @@ export const refresh = async (
   }
 
   return { ...response, refresh_time: new Date() };
+};
+
+export const getItems = async (
+  user_id: string,
+  access_token: string,
+  searchCriteria: ItemSearchCriteria
+): Promise<Item[]> => {
+  let response;
+  if (fakeItem) {
+    console.warn('getItems: \n\n Fake Response!\n\n\n');
+    response = JSON.parse(process.env.REACT_APP_ITEM_RESPONSE || '');
+  } else {
+    response = await post(
+      ITEM_ENDPOINT,
+      { ...searchCriteria, user_id },
+      access_token
+    );
+  }
+
+  if (!response) {
+    return [];
+  }
+
+  return response.items;
 };
