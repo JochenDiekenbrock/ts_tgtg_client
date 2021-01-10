@@ -35,6 +35,11 @@ export interface Session extends Token {
   };
 }
 
+export interface TransientSession {
+  loginRefreshed: boolean;
+  loadFailed: boolean;
+}
+
 export interface Location {
   longitude: number;
   latitude: number;

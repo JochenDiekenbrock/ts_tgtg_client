@@ -1,6 +1,6 @@
 import React, { Dispatch, FC } from 'react';
 import { Session } from './helper/models';
-import { useLocalStorage } from './helper/useLocalStorage';
+import { useLocalStorage } from './helper/use-local-storage';
 
 export const SessionContext = React.createContext<{
   session?: Session | undefined;

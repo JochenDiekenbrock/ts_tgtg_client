@@ -8,7 +8,7 @@ import { Item, ItemSearchCriteria, Session, Token } from '../helper/models';
 
 const fakeItem = true;
 const fakeLogin = true;
-const fakeRefresh = true;
+const fakeRefresh = false;
 
 const getHeaders = (access_token?: string): Headers => {
   const headers = new Headers([
@@ -24,11 +24,11 @@ const getHeaders = (access_token?: string): Headers => {
   return headers;
 };
 
-const post = async (
+const post = async <Response = unknown>(
   url: string,
   body: any,
   access_token?: string
-): Promise<any> => {
+): Promise<Response | undefined> => {
   const response = await fetch(url, {
     method: 'POST',
     headers: getHeaders(access_token),
@@ -62,7 +62,7 @@ export const login = async (
     return JSON.parse(process.env.REACT_APP_LOGIN_RESPONSE || '');
   }
 
-  const response = await post(LOGIN_ENDPOINT, {
+  const response = await post<Session>(LOGIN_ENDPOINT, {
     device_type: 'UNKNOWN',
     email,
     password
@@ -74,10 +74,7 @@ export const login = async (
 
   return {
     ...response,
-    email,
-    name: response.startup_data.user.name,
-    refresh_time: new Date(),
-    user_id: response.startup_data.user.user_id
+    refresh_time: new Date()
   };
 };
 
@@ -89,7 +86,7 @@ export const refresh = async (
     response = JSON.parse(process.env.REACT_APP_LOGIN_RESPONSE || '');
     console.warn('refresh: \n\n Fake Response!\n\n\n');
   } else {
-    response = await post(REFRESH_ENDPOINT, {
+    response = await post<Token>(REFRESH_ENDPOINT, {
       refresh_token
     });
   }
@@ -106,12 +103,12 @@ export const getItems = async (
   access_token: string,
   searchCriteria: ItemSearchCriteria
 ): Promise<Item[]> => {
-  let response;
+  let response: { items: Item[] } | undefined;
   if (fakeItem) {
     console.warn('getItems: \n\n Fake Response!\n\n\n');
     response = JSON.parse(process.env.REACT_APP_ITEM_RESPONSE || '');
   } else {
-    response = await post(
+    response = await post<{ items: Item[] }>(
       ITEM_ENDPOINT,
       { ...searchCriteria, user_id },
       access_token

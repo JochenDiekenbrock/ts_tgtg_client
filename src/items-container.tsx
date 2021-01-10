@@ -1,5 +1,5 @@
 import { FC, useState } from 'react';
-import { useGetItems } from './helper/useGetItems';
+import { useGetItems } from './helper/use-get-items';
 import { Items } from './items';
 import { Item } from './helper/models';
 

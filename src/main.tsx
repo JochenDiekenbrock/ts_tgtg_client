@@ -1,13 +1,15 @@
-import { FC, useContext, useEffect, useState } from 'react';
+import { FC, useContext, useEffect } from 'react';
 import { EMAIL, PASSWORD } from './config';
 import { login, refresh } from './api/api';
 import { ItemsContainer } from './items-container';
 import { SessionContext } from './session';
+import { TransientSessionContext } from './transient-session';
 
 export const Main: FC = () => {
   const { session, setSession } = useContext(SessionContext);
-  console.log('main.tsx:9: sessionData: ', session);
-  const [loadFailed, setLoadFailed] = useState(false);
+  const { transientSession, setTransientSession } = useContext(
+    TransientSessionContext
+  );
 
   useEffect(() => {
     const doLogin = async () => {
@@ -15,7 +17,7 @@ export const Main: FC = () => {
       if (loginData && setSession) {
         setSession(loginData);
       } else {
-        setLoadFailed(true);
+        setTransientSession({ ...transientSession, loadFailed: true });
       }
     };
     const doRefresh = async (refresh_token: string) => {
@@ -23,6 +25,8 @@ export const Main: FC = () => {
       if (!token) {
         return false;
       }
+
+      setTransientSession({ ...transientSession, loginRefreshed: true });
 
       if (session && setSession) {
         setSession({
@@ -41,7 +45,7 @@ export const Main: FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (loadFailed) {
+  if (transientSession.loadFailed) {
     return <h1>Sorry, could not load data</h1>;
   }
 
